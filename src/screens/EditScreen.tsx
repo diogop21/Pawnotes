@@ -6,7 +6,7 @@ import Field from '../components/Field';
 import Header from '../components/Header';
 import PetAvatar from '../components/PetAvatar';
 import RowList from '../components/RowList';
-import { notify } from '../dialogs';
+import { useDialogs } from '../dialogs';
 import { deletePetPhoto, pickPetPhoto } from '../photo';
 import { colors, font, space } from '../theme';
 import { Contact, Feeding, Medication, Pet, Quirk, SectionKey, Walk } from '../types';
@@ -30,6 +30,7 @@ type Props = {
 // Edits one section of a pet. Changes are only kept when you tap Save.
 export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Props) {
   const insets = useSafeAreaInsets();
+  const { notify } = useDialogs();
   const [draft, setDraft] = useState<Pet>(pet);
   const set = <K extends keyof Pet>(key: K, value: Pet[K]) => setDraft((d) => ({ ...d, [key]: value }));
   const setContact = (key: 'owner' | 'backup' | 'emergencyVet', field: keyof Contact, value: string) =>

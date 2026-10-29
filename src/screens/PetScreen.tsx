@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BigButton from '../components/BigButton';
 import Header from '../components/Header';
 import PetAvatar from '../components/PetAvatar';
-import { confirm, notify } from '../dialogs';
+import { useDialogs } from '../dialogs';
 import { buildShareText } from '../shareText';
 import { colors, font, radius, space } from '../theme';
 import { Pet, SectionKey } from '../types';
@@ -57,6 +57,7 @@ const SECTIONS: { key: SectionKey; title: string; emoji: string }[] = [
 
 export default function PetScreen({ pet, onBack, onEdit, onDelete }: Props) {
   const insets = useSafeAreaInsets();
+  const { confirm, showText } = useDialogs();
   const preview = summaries(pet);
 
   const share = async () => {
@@ -64,7 +65,8 @@ export default function PetScreen({ pet, onBack, onEdit, onDelete }: Props) {
     try {
       await Share.share({ message, title: `PawNotes for ${pet.name}` });
     } catch {
-      notify('Sharing not available', 'Your device could not open the share sheet.');
+      // No share sheet (e.g. a desktop browser): show the text so it can be copied instead.
+      showText('Copy and send to your sitter', message);
     }
   };
 

@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, BackHandler, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { DialogProvider } from './src/dialogs';
 import { deletePetPhoto } from './src/photo';
 import EditScreen from './src/screens/EditScreen';
 import HomeScreen, { MAX_PETS } from './src/screens/HomeScreen';
@@ -114,8 +115,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      {screen}
+      <DialogProvider>
+        <StatusBar style="light" />
+        {screen}
+      </DialogProvider>
     </SafeAreaProvider>
   );
 }
