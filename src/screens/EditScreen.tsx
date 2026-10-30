@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BigButton from '../components/BigButton';
+import Choice from '../components/Choice';
 import Field from '../components/Field';
 import Header from '../components/Header';
 import PetAvatar from '../components/PetAvatar';
@@ -14,6 +15,7 @@ import { Contact, Feeding, Medication, Pet, Quirk, SectionKey, Walk } from '../t
 const TITLES: Record<SectionKey, string> = {
   profile: 'Profile',
   routine: 'Daily routine',
+  behavior: 'Behaviour',
   quirks: 'Quirks & rules',
   health: 'Meds & health',
   contacts: 'Emergency contacts',
@@ -76,6 +78,21 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
               <Field label="Name *" value={draft.name} onChangeText={(t) => set('name', t)} placeholder="e.g. Biscuit" />
               <Field label="Breed" value={draft.breed} onChangeText={(t) => set('breed', t)} placeholder="e.g. Golden Retriever" />
               <Field label="Age" value={draft.age} onChangeText={(t) => set('age', t)} placeholder="e.g. 4 years" />
+              <Choice label="Sex" options={['Male', 'Female']} value={draft.sex} onChange={(v) => set('sex', v)} />
+              <Choice
+                label="Spayed / neutered"
+                options={['Yes', 'No']}
+                value={draft.neutered}
+                onChange={(v) => set('neutered', v)}
+              />
+              <Field label="Weight" value={draft.weight} onChangeText={(t) => set('weight', t)} placeholder="e.g. 28 kg" />
+              <Field
+                label="Colour & markings"
+                value={draft.markings}
+                onChangeText={(t) => set('markings', t)}
+                placeholder="e.g. Golden, white patch on chest, red collar"
+                multiline
+              />
               <Field
                 label="Microchip number"
                 value={draft.microchip}
@@ -120,6 +137,53 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
             </>
           )}
 
+          {section === 'behavior' && (
+            <>
+              {(
+                [
+                  ['goodWithDogs', 'Good with other dogs?'],
+                  ['goodWithCats', 'Good with cats?'],
+                  ['goodWithKids', 'Good with kids?'],
+                  ['goodWithStrangers', 'Good with strangers?'],
+                ] as const
+              ).map(([key, label]) => (
+                <Choice
+                  key={key}
+                  label={label}
+                  options={['Yes', 'No', 'Sometimes']}
+                  value={draft[key]}
+                  onChange={(v) => set(key, v)}
+                />
+              ))}
+              <Choice
+                label="Escape risk"
+                options={['Low', 'Medium', 'High']}
+                value={draft.escapeRisk}
+                onChange={(v) => set('escapeRisk', v)}
+              />
+              <Field
+                label="Escape notes"
+                value={draft.escapeNotes}
+                onChangeText={(t) => set('escapeNotes', t)}
+                placeholder="e.g. Bolts out the front door. Keep the gate latched."
+                multiline
+              />
+              <Field
+                label="Sleep & crate"
+                value={draft.sleep}
+                onChangeText={(t) => set('sleep', t)}
+                placeholder="e.g. Sleeps in her crate at 10 PM, door closed. Likes the radio on."
+                multiline
+              />
+              <Field
+                label="Commands they know"
+                value={draft.commands}
+                onChangeText={(t) => set('commands', t)}
+                placeholder="e.g. Sit, wait, leave it, come"
+              />
+            </>
+          )}
+
           {section === 'quirks' && (
             <RowList<Quirk>
               title="💡 Quirks & house rules"
@@ -145,6 +209,28 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
                   { key: 'time', label: 'Time', placeholder: 'Time (e.g. 8:00 AM with food)' },
                 ]}
               />
+              <Field
+                label="Medical conditions"
+                value={draft.conditions}
+                onChangeText={(t) => set('conditions', t)}
+                placeholder="e.g. Hip dysplasia, no stairs"
+                multiline
+              />
+              <Field
+                label="Allergies"
+                value={draft.allergies}
+                onChangeText={(t) => set('allergies', t)}
+                placeholder="e.g. Chicken, bee stings"
+                multiline
+              />
+              <Field
+                label="Vaccinations"
+                value={draft.vaccinations}
+                onChangeText={(t) => set('vaccinations', t)}
+                placeholder="e.g. Up to date. Rabies due March 2027."
+                multiline
+              />
+
               <Text style={styles.groupTitle}>🩺 Vet</Text>
               <Field label="Vet name" value={draft.vetName} onChangeText={(t) => set('vetName', t)} placeholder="e.g. Dr. Lee, Happy Paws Clinic" />
               <Field
@@ -155,11 +241,33 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
                 keyboardType="phone-pad"
               />
               <Field
-                label="Allergies"
-                value={draft.allergies}
-                onChangeText={(t) => set('allergies', t)}
-                placeholder="e.g. Chicken, bee stings"
+                label="Vet address"
+                value={draft.vetAddress}
+                onChangeText={(t) => set('vetAddress', t)}
+                placeholder="e.g. 12 Oak Street, Springfield"
                 multiline
+              />
+              <Field
+                label="Approved vet spending"
+                value={draft.vetSpendingLimit}
+                onChangeText={(t) => set('vetSpendingLimit', t)}
+                placeholder="e.g. Up to $500 without calling me first"
+                multiline
+              />
+
+              <Text style={styles.groupTitle}>🛡️ Insurance</Text>
+              <Field
+                label="Insurance company"
+                value={draft.insurance}
+                onChangeText={(t) => set('insurance', t)}
+                placeholder="e.g. Petplan"
+              />
+              <Field
+                label="Policy number"
+                value={draft.insurancePolicy}
+                onChangeText={(t) => set('insurancePolicy', t)}
+                placeholder="e.g. PP-1234567"
+                autoCapitalize="characters"
               />
             </>
           )}
@@ -187,6 +295,15 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
                   placeholder="e.g. 555-987-6543"
                   keyboardType="phone-pad"
                 />
+                {key === 'emergencyVet' && (
+                  <Field
+                    label="Address"
+                    value={draft.emergencyVetAddress}
+                    onChangeText={(t) => set('emergencyVetAddress', t)}
+                    placeholder="e.g. 400 Main Road, open 24/7"
+                    multiline
+                  />
+                )}
               </View>
             ))}
         </ScrollView>
