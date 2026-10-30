@@ -10,7 +10,12 @@ export async function loadPets(): Promise<Pet[]> {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as Partial<Pet>[];
     // Fill in any missing fields so older saved data keeps working.
-    return parsed.map((p) => ({ ...emptyPet(), ...p }) as Pet);
+    return parsed.map((p) => {
+      const pet = { ...emptyPet(), ...p } as Pet;
+      // In a web browser a chosen photo is a temporary link that stops working after a reload.
+      if (pet.photoUri?.startsWith('blob:')) pet.photoUri = null;
+      return pet;
+    });
   } catch (e) {
     console.warn('Could not load pets', e);
     return [];
