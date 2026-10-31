@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
-import { Share } from 'react-native';
+import { Platform, Share } from 'react-native';
 import { shareCard as makeCard } from './card';
 import { useDialogs } from './dialogs';
+import { resolvePhotoUri } from './photo';
 import { buildShareText, petName } from './shareText';
 import { HomeInfo, Pet } from './types';
 
@@ -12,8 +13,13 @@ export function useSharing() {
   const shareText = useCallback(
     async (pets: Pet[], home: HomeInfo) => {
       const message = buildShareText(pets, home);
+      // iPhones can send the pet's photo along with the text. Android's share menu only takes
+      // text here, so there the photo goes out with the Photo card instead.
+      const photo = Platform.OS === 'ios' && pets.length === 1 ? resolvePhotoUri(pets[0].photoUri) : null;
       try {
-        await Share.share({ message, title: `PawNotes for ${pets.map(petName).join(' & ')}` });
+        await Share.share(
+          photo ? { message, url: photo } : { message, title: `PawNotes for ${pets.map(petName).join(' & ')}` },
+        );
       } catch {
         // No share sheet (e.g. a desktop browser): show the text so it can be copied instead.
         showText('Copy and send to your sitter', message);
