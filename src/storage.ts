@@ -36,6 +36,8 @@ export async function loadPets(): Promise<LoadResult> {
     console.warn('Saved pets are damaged, keeping a backup', e);
     try {
       await AsyncStorage.setItem(`${STORAGE_KEY}.damaged-${Date.now()}`, raw);
+      // The copy is safe, so clear the damaged data. Otherwise the warning shows on every launch.
+      await AsyncStorage.removeItem(STORAGE_KEY);
       return { ok: true, pets: [], recovered: true };
     } catch (backupError) {
       console.warn('Could not back up damaged pets', backupError);
@@ -72,6 +74,7 @@ export async function loadHome(): Promise<HomeInfo | null> {
     console.warn('Saved home info is damaged, keeping a backup', e);
     try {
       await AsyncStorage.setItem(`${HOME_KEY}.damaged-${Date.now()}`, raw);
+      await AsyncStorage.removeItem(HOME_KEY);
       return normalizeHome(null);
     } catch {
       return null;

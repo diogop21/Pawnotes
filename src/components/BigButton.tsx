@@ -6,11 +6,13 @@ type Props = {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   disabled?: boolean;
+  // Smaller text and padding, for two buttons side by side on a phone.
+  compact?: boolean;
   style?: ViewStyle;
 };
 
 // A large, thumb-friendly button.
-export default function BigButton({ label, onPress, variant = 'primary', disabled, style }: Props) {
+export default function BigButton({ label, onPress, variant = 'primary', disabled, compact, style }: Props) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -20,12 +22,18 @@ export default function BigButton({ label, onPress, variant = 'primary', disable
       style={({ pressed }) => [
         styles.base,
         styles[variant],
+        compact && styles.compact,
         pressed && styles.pressed,
         disabled && styles.disabled,
         style,
       ]}
     >
-      <Text style={[styles.label, variant !== 'primary' && styles[`${variant}Label`]]}>{label}</Text>
+      <Text
+        numberOfLines={1}
+        style={[styles.label, compact && styles.compactLabel, variant !== 'primary' && styles[`${variant}Label`]]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -42,6 +50,8 @@ const styles = StyleSheet.create({
   secondary: { backgroundColor: colors.primarySoft },
   danger: { backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.danger },
   ghost: { backgroundColor: 'transparent' },
+  compact: { minHeight: 52, paddingHorizontal: space.sm },
+  compactLabel: { fontSize: font.body },
   pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.45 },
   label: { color: colors.white, fontSize: font.large, fontWeight: '700' },

@@ -19,7 +19,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "PawNotes uses your photos so you can add a picture of your pet."
+          "photosPermission": "PawNotes uses your photos so you can add a picture of your pet.",
+          "cameraPermission": "PawNotes uses your camera so you can take a picture of your pet."
         }
       ],
       "expo-sharing"

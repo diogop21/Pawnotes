@@ -6,15 +6,25 @@ import { Platform } from 'react-native';
 // so the photo is shrunk and saved inside the pet's data instead of as a file.
 const WEB_PHOTO_SIZE = 600;
 
-// Opens the camera roll so the user can choose a square photo.
+export class CameraPermissionError extends Error {}
+
+// Opens the camera or the camera roll so the user can take or choose a square photo.
 // Returns the photo's location, or null if they cancelled.
-export async function pickPetPhoto(petId: string): Promise<string | null> {
-  const result = await ImagePicker.launchImageLibraryAsync({
+export async function pickPetPhoto(petId: string, source: 'camera' | 'library'): Promise<string | null> {
+  const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [1, 1],
     quality: 0.7,
-  });
+  };
+  if (source === 'camera' && Platform.OS !== 'web') {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) throw new CameraPermissionError();
+  }
+  const result =
+    source === 'camera'
+      ? await ImagePicker.launchCameraAsync(options)
+      : await ImagePicker.launchImageLibraryAsync(options);
   if (result.canceled || !result.assets?.length) return null;
   const pickedUri = result.assets[0].uri;
 

@@ -8,7 +8,7 @@ import Header from '../components/Header';
 import PetAvatar from '../components/PetAvatar';
 import RowList from '../components/RowList';
 import { useDialogs } from '../dialogs';
-import { deletePetPhoto, pickPetPhoto } from '../photo';
+import { CameraPermissionError, deletePetPhoto, pickPetPhoto } from '../photo';
 import { colors, font, space } from '../theme';
 import { Contact, Feeding, Medication, Pet, Quirk, SectionKey, Walk } from '../types';
 
@@ -39,15 +39,21 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
   const setContact = (key: 'owner' | 'backup' | 'emergencyVet', field: keyof Contact, value: string) =>
     setDraft((d) => ({ ...d, [key]: { ...d[key], [field]: value } }));
 
-  const choosePhoto = async () => {
+  const getPhoto = async (source: 'camera' | 'library') => {
     try {
-      const uri = await pickPetPhoto(draft.id);
+      const uri = await pickPetPhoto(draft.id, source);
       if (!uri) return;
       // Replacing a photo picked earlier in this same edit? Clean the unused one up.
       if (draft.photoUri !== pet.photoUri) deletePetPhoto(draft.photoUri);
       set('photoUri', uri);
-    } catch {
-      notify('Could not open photos', 'Please allow PawNotes to access your photos and try again.');
+    } catch (e) {
+      if (e instanceof CameraPermissionError) {
+        notify('Camera is off for PawNotes', 'Turn on camera access for Expo Go or PawNotes in your phone Settings, then try again.');
+      } else if (source === 'camera') {
+        notify('Could not open the camera', 'Try again, or choose a photo from your library instead.');
+      } else {
+        notify('Could not open photos', 'Please allow PawNotes to access your photos and try again.');
+      }
     }
   };
 
@@ -88,10 +94,19 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {section === 'profile' && (
             <>
-              <Pressable accessibilityRole="button" onPress={choosePhoto} style={styles.photoBtn}>
-                <PetAvatar uri={draft.photoUri} size={140} />
-                <Text style={styles.photoText}>{draft.photoUri ? 'Change photo' : 'Add a photo'}</Text>
-              </Pressable>
+              <View style={styles.photoBox}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose a photo from your library"
+                  onPress={() => getPhoto('library')}
+                >
+                  <PetAvatar uri={draft.photoUri} size={140} />
+                </Pressable>
+                <View style={styles.photoButtons}>
+                  <BigButton label="📷 Take photo" variant="secondary" compact onPress={() => getPhoto('camera')} style={styles.photoBtn} />
+                  <BigButton label="🖼️ Choose photo" variant="secondary" compact onPress={() => getPhoto('library')} style={styles.photoBtn} />
+                </View>
+              </View>
               <Field label="Name *" value={draft.name} onChangeText={(t) => set('name', t)} placeholder="e.g. Biscuit" />
               <Field label="Breed" value={draft.breed} onChangeText={(t) => set('breed', t)} placeholder="e.g. Golden Retriever" />
               <Field label="Age" value={draft.age} onChangeText={(t) => set('age', t)} placeholder="e.g. 4 years" />
@@ -338,8 +353,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   content: { padding: space.md, paddingBottom: space.xl },
-  photoBtn: { alignItems: 'center', marginBottom: space.lg },
-  photoText: { fontSize: font.body, fontWeight: '700', color: colors.primary, marginTop: space.sm },
+  photoBox: { alignItems: 'center', gap: space.md, marginBottom: space.lg },
+  photoButtons: { flexDirection: 'row', gap: space.sm, alignSelf: 'stretch' },
+  photoBtn: { flex: 1 },
   groupTitle: { fontSize: font.large, fontWeight: '800', color: colors.text, marginBottom: space.sm, marginTop: space.sm },
   footer: {
     flexDirection: 'row',

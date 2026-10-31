@@ -106,8 +106,8 @@ export default function HomeScreen({ pets, home, onOpenPet, onAddPet, onEditHome
           Your pets are only saved on this device. Save a backup file somewhere safe, like email or a cloud drive.
         </Text>
         <View style={styles.row}>
-          <BigButton label="💾 Back up" variant="secondary" onPress={onBackup} disabled={!pets.length} style={styles.flex} />
-          <BigButton label="📥 Restore" variant="secondary" onPress={onRestore} style={styles.flex} />
+          <BigButton label="💾 Back up" variant="secondary" compact onPress={onBackup} disabled={!pets.length} style={styles.flex} />
+          <BigButton label="📥 Restore" variant="secondary" compact onPress={onRestore} style={styles.flex} />
         </View>
       </ScrollView>
 
