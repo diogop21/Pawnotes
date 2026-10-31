@@ -22,7 +22,12 @@ export async function loadPets(): Promise<LoadResult> {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) throw new Error('Saved pets are not a list');
     // Fill in any missing fields so older saved data keeps working.
-    const pets = (parsed as Partial<Pet>[]).map((p) => ({ ...emptyPet(), ...p }) as Pet);
+    const pets = (parsed as Partial<Pet>[]).map((p) => {
+      const pet = { ...emptyPet(), ...p } as Pet;
+      // In a web browser a chosen photo is a temporary link that stops working after a reload.
+      if (pet.photoUri?.startsWith('blob:')) pet.photoUri = null;
+      return pet;
+    });
     return { ok: true, pets, recovered: false };
   } catch (e) {
     // The saved data is damaged. Keep a copy under another key before starting fresh,
