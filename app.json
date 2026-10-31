@@ -21,7 +21,8 @@
         {
           "photosPermission": "PawNotes uses your photos so you can add a picture of your pet."
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }

@@ -2,34 +2,56 @@ import { StatusBar } from 'expo-status-bar';
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, BackHandler, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DialogProvider } from './src/dialogs';
+import { exportBackup, readBackup, unpackBackup } from './src/backup';
+import { DialogProvider, useDialogs } from './src/dialogs';
 import { deletePetPhoto } from './src/photo';
 import EditScreen from './src/screens/EditScreen';
-import HomeScreen, { MAX_PETS } from './src/screens/HomeScreen';
+import HomeInfoScreen from './src/screens/HomeInfoScreen';
+import HomeScreen from './src/screens/HomeScreen';
 import PetScreen from './src/screens/PetScreen';
-import { loadPets, savePets } from './src/storage';
+import { loadHome, loadPets, saveHome, savePets } from './src/storage';
 import { colors } from './src/theme';
-import { emptyPet, Pet, SectionKey } from './src/types';
+import { emptyPet, HomeInfo, Pet, SectionKey } from './src/types';
 
 // Which screen is showing. Kept as simple state (no navigation library)
 // so the app runs the same in Expo Go and on Expo Snack.
 type Route =
   | { name: 'home' }
+  | { name: 'home-info' }
   | { name: 'pet'; petId: string }
   | { name: 'edit'; petId: string; section: SectionKey }
   | { name: 'new'; draft: Pet };
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <DialogProvider>
+        <StatusBar style="light" />
+        <PawNotes />
+      </DialogProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function PawNotes() {
+  const { notify, confirm } = useDialogs();
   const [pets, setPets] = useState<Pet[] | null>(null);
+  const [home, setHome] = useState<HomeInfo | null>(null);
   const [route, setRoute] = useState<Route>({ name: 'home' });
 
   useEffect(() => {
     loadPets().then(setPets);
+    loadHome().then(setHome);
   }, []);
 
   const updatePets = useCallback((next: Pet[]) => {
     setPets(next);
     savePets(next);
+  }, []);
+
+  const updateHome = useCallback((next: HomeInfo) => {
+    setHome(next);
+    saveHome(next);
   }, []);
 
   const goBack = useCallback(() => {
@@ -47,7 +69,7 @@ export default function App() {
     return () => sub.remove();
   }, [route, goBack]);
 
-  if (!pets) {
+  if (!pets || !home) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -55,9 +77,42 @@ export default function App() {
     );
   }
 
-  const findPet = (id: string) => pets.find((p) => p.id === id);
-  let screen: ReactNode;
+  const backup = async () => {
+    try {
+      await exportBackup(pets, home);
+    } catch (e) {
+      console.warn('Backup failed', e);
+      notify('Could not make a backup', 'Something went wrong saving the backup file. Please try again.');
+    }
+  };
 
+  const restore = async () => {
+    try {
+      const picked = await readBackup();
+      if (!picked) return;
+      const { backup: file } = picked;
+      const date = new Date(file.exportedAt).toLocaleDateString();
+      const count = file.pets.length;
+      const ok = await confirm(
+        'Restore this backup?',
+        `It has ${count} ${count === 1 ? 'pet' : 'pets'} and was made on ${date}. It replaces all pets and home details on this device.`,
+        'Restore',
+      );
+      if (!ok) return;
+      const restored = await unpackBackup(file);
+      pets.forEach((p) => deletePetPhoto(p.photoUri));
+      updatePets(restored.pets);
+      updateHome(restored.home);
+      notify('Backup restored', 'Your pets and home details are back.');
+    } catch (e) {
+      console.warn('Restore failed', e);
+      notify('Could not restore', 'That file is not a PawNotes backup, or it could not be read.');
+    }
+  };
+
+  const findPet = (id: string) => pets.find((p) => p.id === id);
+
+  let screen: ReactNode;
   if (route.name === 'new') {
     screen = (
       <EditScreen
@@ -68,6 +123,17 @@ export default function App() {
         onSave={(pet) => {
           updatePets([...pets, pet]);
           setRoute({ name: 'pet', petId: pet.id });
+        }}
+      />
+    );
+  } else if (route.name === 'home-info') {
+    screen = (
+      <HomeInfoScreen
+        home={home}
+        onCancel={goBack}
+        onSave={(next) => {
+          updateHome(next);
+          goBack();
         }}
       />
     );
@@ -92,6 +158,7 @@ export default function App() {
     screen = (
       <PetScreen
         pet={pet}
+        home={home}
         onBack={() => setRoute({ name: 'home' })}
         onEdit={(section) => setRoute({ name: 'edit', petId: pet.id, section })}
         onDelete={() => {
@@ -105,22 +172,17 @@ export default function App() {
     screen = (
       <HomeScreen
         pets={pets}
+        home={home}
         onOpenPet={(petId) => setRoute({ name: 'pet', petId })}
-        onAddPet={() => {
-          if (pets.length < MAX_PETS) setRoute({ name: 'new', draft: emptyPet() });
-        }}
+        onAddPet={() => setRoute({ name: 'new', draft: emptyPet() })}
+        onEditHome={() => setRoute({ name: 'home-info' })}
+        onBackup={backup}
+        onRestore={restore}
       />
     );
   }
 
-  return (
-    <SafeAreaProvider>
-      <DialogProvider>
-        <StatusBar style="light" />
-        {screen}
-      </DialogProvider>
-    </SafeAreaProvider>
-  );
+  return screen;
 }
 
 const styles = StyleSheet.create({

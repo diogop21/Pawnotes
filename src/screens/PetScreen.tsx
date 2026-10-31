@@ -1,74 +1,45 @@
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BigButton from '../components/BigButton';
 import Header from '../components/Header';
 import PetAvatar from '../components/PetAvatar';
 import { useDialogs } from '../dialogs';
-import { buildShareText } from '../shareText';
+import { useSharing } from '../sharing';
+import { petSections } from '../shareText';
 import { colors, font, radius, space } from '../theme';
-import { Pet, SectionKey } from '../types';
+import { HomeInfo, Pet, SectionKey } from '../types';
 
 type Props = {
   pet: Pet;
+  home: HomeInfo;
   onBack: () => void;
   onEdit: (section: SectionKey) => void;
   onDelete: () => void;
 };
 
-function joined(...parts: string[]) {
-  return parts.map((p) => p.trim()).filter(Boolean).join(' — ');
-}
-
-// Short preview lines shown on each section card.
-function summaries(pet: Pet): Record<SectionKey, string[]> {
-  return {
-    profile: [
-      pet.breed && `Breed: ${pet.breed}`,
-      pet.age && `Age: ${pet.age}`,
-      pet.microchip && `Microchip: ${pet.microchip}`,
-    ].filter(Boolean) as string[],
-    routine: [
-      ...pet.feedings.map((f) => `🍽️ ${joined(f.time, f.amount)}`),
-      ...pet.walks.map((w) => `🦮 ${joined(w.time, w.note)}`),
-      pet.pottyNotes && `🌳 ${pet.pottyNotes}`,
-    ].filter(Boolean) as string[],
-    quirks: pet.quirks.map((q) => `• ${q.text}`).filter((t) => t.length > 2),
-    health: [
-      ...pet.meds.map((m) => `💊 ${joined(m.name, m.dose)}${m.time ? ` at ${m.time}` : ''}`),
-      pet.allergies && `Allergies: ${pet.allergies}`,
-      (pet.vetName || pet.vetPhone) && `Vet: ${joined(pet.vetName, pet.vetPhone)}`,
-    ].filter(Boolean) as string[],
-    contacts: [
-      (pet.owner.name || pet.owner.phone) && `Owner: ${joined(pet.owner.name, pet.owner.phone)}`,
-      (pet.backup.name || pet.backup.phone) && `Backup: ${joined(pet.backup.name, pet.backup.phone)}`,
-      (pet.emergencyVet.name || pet.emergencyVet.phone) &&
-        `Emergency vet: ${joined(pet.emergencyVet.name, pet.emergencyVet.phone)}`,
-    ].filter(Boolean) as string[],
-  };
-}
-
 const SECTIONS: { key: SectionKey; title: string; emoji: string }[] = [
   { key: 'profile', title: 'Profile', emoji: '🐕' },
   { key: 'routine', title: 'Daily routine', emoji: '⏰' },
+  { key: 'behavior', title: 'Behaviour', emoji: '🐾' },
   { key: 'quirks', title: 'Quirks & rules', emoji: '💡' },
   { key: 'health', title: 'Meds & health', emoji: '🩺' },
   { key: 'contacts', title: 'Emergency contacts', emoji: '📞' },
 ];
 
-export default function PetScreen({ pet, onBack, onEdit, onDelete }: Props) {
-  const insets = useSafeAreaInsets();
-  const { confirm, showText } = useDialogs();
-  const preview = summaries(pet);
+// Short preview lines shown on each section card, taken from what gets shared.
+function previews(pet: Pet): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  petSections(pet).forEach((s) => {
+    out[s.title] = s.lines.filter((l) => l && !l.startsWith('• Name:'));
+  });
+  return out;
+}
 
-  const share = async () => {
-    const message = buildShareText(pet);
-    try {
-      await Share.share({ message, title: `PawNotes for ${pet.name}` });
-    } catch {
-      // No share sheet (e.g. a desktop browser): show the text so it can be copied instead.
-      showText('Copy and send to your sitter', message);
-    }
-  };
+export default function PetScreen({ pet, home, onBack, onEdit, onDelete }: Props) {
+  const insets = useSafeAreaInsets();
+  const { confirm } = useDialogs();
+  const { shareText, shareCard } = useSharing();
+  const preview = previews(pet);
 
   const askDelete = async () => {
     const ok = await confirm(
@@ -92,7 +63,7 @@ export default function PetScreen({ pet, onBack, onEdit, onDelete }: Props) {
         </View>
 
         {SECTIONS.map((s) => {
-          const lines = preview[s.key];
+          const lines = preview[s.title] ?? [];
           return (
             <Pressable
               key={s.key}
@@ -121,11 +92,17 @@ export default function PetScreen({ pet, onBack, onEdit, onDelete }: Props) {
           );
         })}
 
+        <BigButton
+          label="🖼️  Photo card (PDF)"
+          variant="secondary"
+          onPress={() => shareCard([pet], home)}
+          style={styles.cardBtn}
+        />
         <BigButton label="Delete this pet" variant="danger" onPress={askDelete} style={styles.delete} />
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
-        <BigButton label="📤  Share with sitter" onPress={share} />
+        <BigButton label="📤  Share with sitter" onPress={() => shareText([pet], home)} />
       </View>
     </View>
   );
@@ -151,7 +128,8 @@ const styles = StyleSheet.create({
   editLink: { fontSize: font.body, fontWeight: '700', color: colors.primary, marginLeft: space.sm },
   cardLine: { fontSize: font.body, color: colors.text, lineHeight: 26 },
   cardEmpty: { fontSize: font.body, color: colors.textMuted, fontStyle: 'italic' },
-  delete: { marginTop: space.lg },
+  cardBtn: { marginTop: space.sm },
+  delete: { marginTop: space.md },
   footer: {
     paddingHorizontal: space.md,
     paddingTop: space.md,
