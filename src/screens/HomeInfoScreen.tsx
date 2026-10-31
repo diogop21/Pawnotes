@@ -1,28 +1,55 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BigButton from '../components/BigButton';
 import Choice from '../components/Choice';
 import Field from '../components/Field';
 import Header from '../components/Header';
+import { useDialogs } from '../dialogs';
 import { colors, font, space } from '../theme';
 import { HomeInfo } from '../types';
 
 type Props = {
   home: HomeInfo;
-  onSave: (home: HomeInfo) => void;
+  onSave: (home: HomeInfo) => Promise<void>;
   onCancel: () => void;
 };
 
 // Edits the home & visit details shared by all pets. Changes are only kept when you tap Save.
 export default function HomeInfoScreen({ home, onSave, onCancel }: Props) {
   const insets = useSafeAreaInsets();
+  const { confirm } = useDialogs();
   const [draft, setDraft] = useState<HomeInfo>(home);
+  const [saving, setSaving] = useState(false);
   const set = <K extends keyof HomeInfo>(key: K, value: HomeInfo[K]) => setDraft((d) => ({ ...d, [key]: value }));
+
+  const cancel = async () => {
+    const changed = JSON.stringify(draft) !== JSON.stringify(home);
+    if (changed && !(await confirm('Discard changes?', 'What you typed here has not been saved.', 'Discard'))) return;
+    onCancel();
+  };
+
+  // Android hardware back button works like Cancel, so it also asks before throwing away changes.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      cancel();
+      return true;
+    });
+    return () => sub.remove();
+  });
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await onSave(draft);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.screen}>
-      <Header title="Home & visit" onBack={onCancel} />
+      <Header title="Home & visit" onBack={cancel} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={styles.groupTitle}>🧳 This visit</Text>
@@ -76,8 +103,8 @@ export default function HomeInfoScreen({ home, onSave, onCancel }: Props) {
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
-          <BigButton label="Cancel" variant="secondary" onPress={onCancel} style={styles.footerBtn} />
-          <BigButton label="Save" onPress={() => onSave(draft)} style={styles.footerBtn} />
+          <BigButton label="Cancel" variant="secondary" onPress={cancel} style={styles.footerBtn} />
+          <BigButton label="Save" onPress={save} disabled={saving} style={styles.footerBtn} />
         </View>
       </KeyboardAvoidingView>
     </View>

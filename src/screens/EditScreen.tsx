@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BigButton from '../components/BigButton';
 import Choice from '../components/Choice';
@@ -25,15 +25,16 @@ type Props = {
   pet: Pet;
   section: SectionKey;
   isNew: boolean;
-  onSave: (pet: Pet) => void;
+  onSave: (pet: Pet) => Promise<void>;
   onCancel: () => void;
 };
 
 // Edits one section of a pet. Changes are only kept when you tap Save.
 export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Props) {
   const insets = useSafeAreaInsets();
-  const { notify } = useDialogs();
+  const { notify, confirm } = useDialogs();
   const [draft, setDraft] = useState<Pet>(pet);
+  const [saving, setSaving] = useState(false);
   const set = <K extends keyof Pet>(key: K, value: Pet[K]) => setDraft((d) => ({ ...d, [key]: value }));
   const setContact = (key: 'owner' | 'backup' | 'emergencyVet', field: keyof Contact, value: string) =>
     setDraft((d) => ({ ...d, [key]: { ...d[key], [field]: value } }));
@@ -50,18 +51,34 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
     }
   };
 
-  const cancel = () => {
+  const cancel = async () => {
+    const changed = JSON.stringify(draft) !== JSON.stringify(pet);
+    if (changed && !(await confirm('Discard changes?', 'What you typed here has not been saved.', 'Discard'))) return;
     // Throw away a photo that was picked but never saved.
     if (draft.photoUri !== pet.photoUri) deletePetPhoto(draft.photoUri);
     onCancel();
   };
 
-  const save = () => {
+  // Android hardware back button works like Cancel, so it also asks before throwing away changes.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      cancel();
+      return true;
+    });
+    return () => sub.remove();
+  });
+
+  const save = async () => {
     if (section === 'profile' && !draft.name.trim()) {
       notify('Name needed', 'Please give your pet a name before saving.');
       return;
     }
-    onSave(draft);
+    setSaving(true);
+    try {
+      await onSave(draft);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -310,7 +327,7 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
           <BigButton label="Cancel" variant="secondary" onPress={cancel} style={styles.footerBtn} />
-          <BigButton label={isNew ? 'Create' : 'Save'} onPress={save} style={styles.footerBtn} />
+          <BigButton label={isNew ? 'Create' : 'Save'} onPress={save} disabled={saving} style={styles.footerBtn} />
         </View>
       </KeyboardAvoidingView>
     </View>
