@@ -1,16 +1,20 @@
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { colors, font, radius, space } from '../theme';
+import { colors, fonts, radius, size, space } from '../theme';
+
+type Variant = 'primary' | 'secondary' | 'danger';
 
 type Props = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: Variant;
   disabled?: boolean;
+  // Smaller text and padding, for two buttons side by side on a phone.
+  compact?: boolean;
   style?: ViewStyle;
 };
 
 // A large, thumb-friendly button.
-export default function BigButton({ label, onPress, variant = 'primary', disabled, style }: Props) {
+export default function BigButton({ label, onPress, variant = 'primary', disabled, compact, style }: Props) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -19,33 +23,49 @@ export default function BigButton({ label, onPress, variant = 'primary', disable
       disabled={disabled}
       style={({ pressed }) => [
         styles.base,
-        styles[variant],
-        pressed && styles.pressed,
+        box[variant],
+        compact && styles.compact,
+        pressed && pressedBox[variant],
         disabled && styles.disabled,
         style,
       ]}
     >
-      <Text style={[styles.label, variant !== 'primary' && styles[`${variant}Label`]]}>{label}</Text>
+      <Text numberOfLines={1} style={[styles.label, compact && styles.compactLabel, text[variant]]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 58,
-    borderRadius: radius.pill,
+    minHeight: 60,
+    borderRadius: radius.md,
     paddingHorizontal: space.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
   },
-  primary: { backgroundColor: colors.primary },
-  secondary: { backgroundColor: colors.primarySoft },
-  danger: { backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.danger },
-  ghost: { backgroundColor: 'transparent' },
-  pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
-  disabled: { opacity: 0.45 },
-  label: { color: colors.white, fontSize: font.large, fontWeight: '700' },
-  secondaryLabel: { color: colors.primaryDark },
-  dangerLabel: { color: colors.danger },
-  ghostLabel: { color: colors.primaryDark },
+  compact: { minHeight: 52, paddingHorizontal: space.sm },
+  disabled: { opacity: 0.5 },
+  label: { fontFamily: fonts.bodyBold, fontSize: size.body },
+  compactLabel: { fontSize: size.small },
+});
+
+const box = StyleSheet.create({
+  primary: { backgroundColor: colors.marigold, borderColor: colors.marigold },
+  secondary: { backgroundColor: colors.paper, borderColor: colors.line },
+  danger: { backgroundColor: 'transparent', borderColor: colors.alert },
+});
+
+const pressedBox = StyleSheet.create({
+  primary: { backgroundColor: colors.marigoldDeep, borderColor: colors.marigoldDeep },
+  secondary: { borderColor: colors.inkSoft },
+  danger: { backgroundColor: colors.alertTint },
+});
+
+const text = StyleSheet.create({
+  primary: { color: colors.ink },
+  secondary: { color: colors.ink },
+  danger: { color: colors.alert },
 });

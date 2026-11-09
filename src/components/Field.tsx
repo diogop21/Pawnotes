@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
-import { colors, font, radius, space } from '../theme';
+import { colors, fonts, radius, size, space } from '../theme';
 
 type Props = {
   label: string;
@@ -13,32 +14,38 @@ type Props = {
 
 // A labelled text box with big, readable text.
 export default function Field({ label, multiline, ...inputProps }: Props) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...inputProps}
+        accessibilityLabel={label}
         multiline={multiline}
-        placeholderTextColor={colors.textMuted}
-        style={[styles.input, multiline && styles.multiline]}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholderTextColor={colors.inkSoft}
+        style={[styles.input, multiline && styles.multiline, focused && styles.focused]}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: space.md },
-  label: { fontSize: font.small, fontWeight: '700', color: colors.textMuted, marginBottom: space.xs },
+  wrap: { gap: space.sm },
+  label: { fontFamily: fonts.bodyBold, fontSize: size.small, color: colors.inkSoft },
   input: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.paper,
     borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderColor: colors.line,
+    borderRadius: radius.sm,
     paddingHorizontal: space.md,
     paddingVertical: 14,
-    fontSize: font.body,
-    color: colors.text,
-    minHeight: 56,
+    fontFamily: fonts.body,
+    fontSize: size.body,
+    color: colors.ink,
+    minHeight: 58,
   },
-  multiline: { minHeight: 110, textAlignVertical: 'top' },
+  multiline: { minHeight: 120, textAlignVertical: 'top' },
+  focused: { borderColor: colors.marigoldDeep },
 });
