@@ -4,11 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BigButton from '../components/BigButton';
 import Field from '../components/Field';
 import Header from '../components/Header';
-import PetAvatar from '../components/PetAvatar';
+import PetTag from '../components/PetTag';
 import RowList from '../components/RowList';
 import { useDialogs } from '../dialogs';
 import { deletePetPhoto, pickPetPhoto } from '../photo';
-import { colors, font, space } from '../theme';
+import { colors, fonts, radius, size, space } from '../theme';
 import { Contact, Feeding, Medication, Pet, Quirk, SectionKey, Walk } from '../types';
 
 const TITLES: Record<SectionKey, string> = {
@@ -81,16 +81,21 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
 
   return (
     <View style={styles.screen}>
-      <Header title={isNew ? 'Add a pet' : `Edit ${TITLES[section].toLowerCase()}`} onBack={cancel} />
+      <Header title={isNew ? 'Add your pet' : TITLES[section]} onBack={cancel} backLabel="Cancel" />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {section === 'profile' && (
             <>
-              <Pressable accessibilityRole="button" onPress={choosePhoto} style={styles.photoBtn}>
-                <PetAvatar uri={draft.photoUri} size={140} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={draft.photoUri ? 'Change photo' : 'Add a photo'}
+                onPress={choosePhoto}
+                style={({ pressed }) => [styles.photoBtn, pressed && styles.photoPressed]}
+              >
+                <PetTag photoUri={draft.photoUri} name={draft.name} size={120} />
                 <Text style={styles.photoText}>{draft.photoUri ? 'Change photo' : 'Add a photo'}</Text>
               </Pressable>
-              <Field label="Name *" value={draft.name} onChangeText={(t) => set('name', t)} placeholder="e.g. Biscuit" />
+              <Field label="Name (needed)" value={draft.name} onChangeText={(t) => set('name', t)} placeholder="e.g. Biscuit" />
               <Field label="Breed" value={draft.breed} onChangeText={(t) => set('breed', t)} placeholder="e.g. Golden Retriever" />
               <Field label="Age" value={draft.age} onChangeText={(t) => set('age', t)} placeholder="e.g. 4 years" />
               <Field
@@ -106,29 +111,29 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
           {section === 'routine' && (
             <>
               <RowList<Feeding>
-                title="🍽️ Feeding"
+                title="Feeding"
+                itemName="Meal"
                 items={draft.feedings}
                 onChange={(v) => set('feedings', v)}
                 makeEmpty={() => ({ time: '', amount: '' })}
-                addLabel="Add feeding"
                 fields={[
                   { key: 'time', label: 'Time', placeholder: 'Time (e.g. 7:30 AM)' },
                   { key: 'amount', label: 'Amount', placeholder: 'Amount (e.g. 1 cup dry food)' },
                 ]}
               />
               <RowList<Walk>
-                title="🦮 Walks"
+                title="Walks"
+                itemName="Walk"
                 items={draft.walks}
                 onChange={(v) => set('walks', v)}
                 makeEmpty={() => ({ time: '', note: '' })}
-                addLabel="Add walk"
                 fields={[
                   { key: 'time', label: 'Time', placeholder: 'Time (e.g. 8:00 AM)' },
                   { key: 'note', label: 'Note', placeholder: 'Note (e.g. 20 min, around the block)' },
                 ]}
               />
               <Field
-                label="🌳 Potty notes"
+                label="Potty notes"
                 value={draft.pottyNotes}
                 onChangeText={(t) => set('pottyNotes', t)}
                 placeholder="e.g. Goes out every 4 hours. Uses the back corner of the yard."
@@ -139,11 +144,11 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
 
           {section === 'quirks' && (
             <RowList<Quirk>
-              title="💡 Quirks & house rules"
+              title="Quirks & house rules"
+              itemName="Rule"
               items={draft.quirks}
               onChange={(v) => set('quirks', v)}
               makeEmpty={() => ({ text: '' })}
-              addLabel="Add quirk or rule"
               fields={[{ key: 'text', label: 'Quirk or rule', placeholder: 'e.g. Scared of the vacuum' }]}
             />
           )}
@@ -151,46 +156,52 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
           {section === 'health' && (
             <>
               <RowList<Medication>
-                title="💊 Medications"
+                title="Medications"
+                itemName="Medication"
                 items={draft.meds}
                 onChange={(v) => set('meds', v)}
                 makeEmpty={() => ({ name: '', time: '', dose: '' })}
-                addLabel="Add medication"
                 fields={[
                   { key: 'name', label: 'Medication', placeholder: 'Medication (e.g. Apoquel)' },
                   { key: 'dose', label: 'Dose', placeholder: 'Dose (e.g. 1 tablet, 16 mg)' },
                   { key: 'time', label: 'Time', placeholder: 'Time (e.g. 8:00 AM with food)' },
                 ]}
               />
-              <Text style={styles.groupTitle}>🩺 Vet</Text>
-              <Field label="Vet name" value={draft.vetName} onChangeText={(t) => set('vetName', t)} placeholder="e.g. Dr. Lee, Happy Paws Clinic" />
-              <Field
-                label="Vet phone"
-                value={draft.vetPhone}
-                onChangeText={(t) => set('vetPhone', t)}
-                placeholder="e.g. 555-123-4567"
-                keyboardType="phone-pad"
-              />
-              <Field
-                label="Allergies"
-                value={draft.allergies}
-                onChangeText={(t) => set('allergies', t)}
-                placeholder="e.g. Chicken, bee stings"
-                multiline
-              />
+              <View style={styles.group}>
+                <Text style={styles.groupTitle} accessibilityRole="header">
+                  Vet & allergies
+                </Text>
+                <Field label="Vet name" value={draft.vetName} onChangeText={(t) => set('vetName', t)} placeholder="e.g. Dr. Lee, Happy Paws Clinic" />
+                <Field
+                  label="Vet phone"
+                  value={draft.vetPhone}
+                  onChangeText={(t) => set('vetPhone', t)}
+                  placeholder="e.g. 555-123-4567"
+                  keyboardType="phone-pad"
+                />
+                <Field
+                  label="Allergies"
+                  value={draft.allergies}
+                  onChangeText={(t) => set('allergies', t)}
+                  placeholder="e.g. Chicken, bee stings"
+                  multiline
+                />
+              </View>
             </>
           )}
 
           {section === 'contacts' &&
             (
               [
-                ['owner', '🏠 Owner', 'e.g. Sam Rivera'],
-                ['backup', '🤝 Backup person', 'e.g. Alex (neighbor)'],
-                ['emergencyVet', '🚑 Emergency vet', 'e.g. 24/7 Animal Hospital'],
+                ['owner', 'Owner', 'e.g. Sam Rivera'],
+                ['backup', 'Backup person', 'e.g. Alex (neighbor)'],
+                ['emergencyVet', 'Emergency vet', 'e.g. 24/7 Animal Hospital'],
               ] as const
             ).map(([key, title, namePlaceholder]) => (
-              <View key={key}>
-                <Text style={styles.groupTitle}>{title}</Text>
+              <View key={key} style={styles.group}>
+                <Text style={styles.groupTitle} accessibilityRole="header">
+                  {title}
+                </Text>
                 <Field
                   label="Name"
                   value={draft[key].name}
@@ -210,7 +221,7 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
           <BigButton label="Cancel" variant="secondary" onPress={cancel} style={styles.footerBtn} />
-          <BigButton label={isNew ? 'Create' : 'Save'} onPress={save} disabled={saving} style={styles.footerBtn} />
+          <BigButton label={isNew ? 'Create sheet' : 'Save'} onPress={save} disabled={saving} style={styles.footerBtn} />
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -218,20 +229,27 @@ export default function EditScreen({ pet, section, isNew, onSave, onCancel }: Pr
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
+  screen: { flex: 1, backgroundColor: colors.page },
   flex: { flex: 1 },
-  content: { padding: space.md, paddingBottom: space.xl },
-  photoBtn: { alignItems: 'center', marginBottom: space.lg },
-  photoText: { fontSize: font.body, fontWeight: '700', color: colors.primary, marginTop: space.sm },
-  groupTitle: { fontSize: font.large, fontWeight: '800', color: colors.text, marginBottom: space.sm, marginTop: space.sm },
+  content: { paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: space.xl, gap: space.lg },
+  photoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    alignSelf: 'flex-start',
+    paddingRight: space.md,
+    borderRadius: radius.md,
+  },
+  photoPressed: { backgroundColor: colors.line },
+  photoText: { fontFamily: fonts.bodyBold, fontSize: size.body, color: colors.ink, textDecorationLine: 'underline' },
+  group: { gap: space.md },
+  groupTitle: { fontFamily: fonts.heading, fontSize: size.heading, color: colors.ink },
   footer: {
     flexDirection: 'row',
     gap: space.md,
     paddingHorizontal: space.md,
     paddingTop: space.md,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    backgroundColor: colors.page,
   },
   footerBtn: { flex: 1 },
 });

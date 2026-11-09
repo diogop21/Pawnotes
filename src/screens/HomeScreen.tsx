@@ -1,9 +1,9 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BigButton from '../components/BigButton';
-import Header from '../components/Header';
-import PetAvatar from '../components/PetAvatar';
-import { colors, font, radius, space } from '../theme';
+import PetTag from '../components/PetTag';
+import { colors, fonts, radius, size, space } from '../theme';
 import { Pet } from '../types';
 
 // Version 1 allows only one pet.
@@ -21,18 +21,20 @@ export default function HomeScreen({ pets, onOpenPet, onAddPet }: Props) {
 
   return (
     <View style={styles.screen}>
-      <Header title="🐾 PawNotes" />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.intro}>
-          Everything your pet sitter needs to know, in one place.
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]}>
+        <Text style={styles.wordmark} accessibilityRole="header">
+          PawNotes
         </Text>
+        <Text style={styles.intro}>Everything your pet sitter needs to know, ready to send.</Text>
 
         {pets.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyEmoji}>🐶🐱</Text>
-            <Text style={styles.emptyTitle}>No pets yet</Text>
+          <View style={styles.empty}>
+            <View style={styles.emptyTag}>
+              <PetTag photoUri={null} name="" size={132} />
+            </View>
+            <Text style={styles.emptyTitle}>No pet yet</Text>
             <Text style={styles.emptyText}>
-              Tap “Add a pet” below to create your first pet profile.
+              Add your pet to start their sitter sheet: routine, quirks, meds and who to call.
             </Text>
           </View>
         )}
@@ -41,33 +43,31 @@ export default function HomeScreen({ pets, onOpenPet, onAddPet }: Props) {
           <Pressable
             key={pet.id}
             accessibilityRole="button"
-            accessibilityLabel={`Open ${pet.name}`}
+            accessibilityLabel={`Open ${pet.name}'s sitter sheet`}
             onPress={() => onOpenPet(pet.id)}
-            style={({ pressed }) => [styles.petCard, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.pet, pressed && styles.petPressed]}
           >
-            <PetAvatar uri={pet.photoUri} size={76} />
+            <PetTag photoUri={pet.photoUri} name={pet.name} size={92} />
             <View style={styles.petInfo}>
               <Text style={styles.petName} numberOfLines={1}>
                 {pet.name || 'Unnamed pet'}
               </Text>
-              <Text style={styles.petMeta} numberOfLines={1}>
-                {[pet.breed, pet.age].filter(Boolean).join(' · ') || 'Tap to add details'}
+              <Text style={styles.petMeta} numberOfLines={2}>
+                {[pet.breed, pet.age].filter(Boolean).join(', ') || 'Tap to add details'}
               </Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <Ionicons name="chevron-forward" size={26} color={colors.inkSoft} />
           </Pressable>
         ))}
 
         {!canAdd && (
-          <Text style={styles.limitNote}>
-            PawNotes currently supports one pet. More pets are coming in a future version!
-          </Text>
+          <Text style={styles.limitNote}>PawNotes holds one pet for now. Room for more is coming.</Text>
         )}
       </ScrollView>
 
       {canAdd && (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
-          <BigButton label="+ Add a pet" onPress={onAddPet} />
+          <BigButton label="Add your pet" onPress={onAddPet} />
         </View>
       )}
     </View>
@@ -75,42 +75,26 @@ export default function HomeScreen({ pets, onOpenPet, onAddPet }: Props) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: space.md, paddingBottom: space.xl },
-  intro: { fontSize: font.body, color: colors.textMuted, marginBottom: space.lg, lineHeight: 26 },
-  emptyCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: space.xl,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-  },
-  emptyEmoji: { fontSize: 48, marginBottom: space.sm },
-  emptyTitle: { fontSize: font.large, fontWeight: '800', color: colors.text, marginBottom: space.sm },
-  emptyText: { fontSize: font.body, color: colors.textMuted, textAlign: 'center', lineHeight: 26 },
-  petCard: {
+  screen: { flex: 1, backgroundColor: colors.page },
+  content: { paddingHorizontal: space.md, paddingBottom: space.xl, gap: space.md },
+  wordmark: { fontFamily: fonts.display, fontSize: size.name, color: colors.ink, lineHeight: 50 },
+  intro: { fontFamily: fonts.body, fontSize: size.body, color: colors.inkSoft, lineHeight: 27, marginBottom: space.md },
+  empty: { alignItems: 'flex-start', gap: space.sm, paddingTop: space.lg },
+  emptyTag: { opacity: 0.55, marginBottom: space.sm },
+  emptyTitle: { fontFamily: fonts.heading, fontSize: size.heading, color: colors.ink },
+  emptyText: { fontFamily: fonts.body, fontSize: size.body, color: colors.inkSoft, lineHeight: 27 },
+  pet: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
+    gap: space.md,
+    backgroundColor: colors.paper,
+    borderRadius: radius.md,
     padding: space.md,
-    marginBottom: space.md,
-    borderWidth: 2,
-    borderColor: colors.border,
   },
-  pressed: { opacity: 0.8 },
-  petInfo: { flex: 1, marginLeft: space.md },
-  petName: { fontSize: font.large, fontWeight: '800', color: colors.text },
-  petMeta: { fontSize: font.body, color: colors.textMuted, marginTop: 2 },
-  chevron: { fontSize: 40, color: colors.primary, marginLeft: space.sm },
-  limitNote: { fontSize: font.small, color: colors.textMuted, textAlign: 'center', marginTop: space.sm, lineHeight: 22 },
-  footer: {
-    paddingHorizontal: space.md,
-    paddingTop: space.md,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
+  petPressed: { backgroundColor: colors.line },
+  petInfo: { flex: 1, minWidth: 0, gap: 2 },
+  petName: { fontFamily: fonts.display, fontSize: size.title, color: colors.ink },
+  petMeta: { fontFamily: fonts.body, fontSize: size.body, color: colors.inkSoft },
+  limitNote: { fontFamily: fonts.body, fontSize: size.small, color: colors.inkSoft, lineHeight: 23 },
+  footer: { paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: colors.page },
 });
