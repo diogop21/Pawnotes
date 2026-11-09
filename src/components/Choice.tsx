@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, font, radius, space } from '../theme';
+import { colors, fonts, radius, size, space } from '../theme';
 
 type Props = {
   label: string;
@@ -12,7 +12,7 @@ type Props = {
 // Tapping the chosen answer again clears it.
 export default function Choice({ label, options, value, onChange }: Props) {
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} accessibilityRole="radiogroup" accessibilityLabel={label}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.row}>
         {options.map((option) => {
@@ -24,9 +24,13 @@ export default function Choice({ label, options, value, onChange }: Props) {
               accessibilityState={{ selected }}
               accessibilityLabel={`${label}: ${option}`}
               onPress={() => onChange(selected ? '' : option)}
-              style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.chip,
+                selected && styles.chipSelected,
+                pressed && (selected ? styles.chipSelectedPressed : styles.chipPressed),
+              ]}
             >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{option}</Text>
+              <Text style={styles.chipText}>{option}</Text>
             </Pressable>
           );
         })}
@@ -36,21 +40,21 @@ export default function Choice({ label, options, value, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: space.md },
-  label: { fontSize: font.small, fontWeight: '700', color: colors.textMuted, marginBottom: space.xs },
+  wrap: { gap: space.sm },
+  label: { fontFamily: fonts.bodyBold, fontSize: size.small, color: colors.inkSoft },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: {
-    minHeight: 48,
+    minHeight: 50,
     paddingHorizontal: space.md,
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: 2,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
+    borderColor: colors.line,
+    backgroundColor: colors.paper,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  pressed: { opacity: 0.75 },
-  chipText: { fontSize: font.body, fontWeight: '700', color: colors.text },
-  chipTextSelected: { color: colors.white },
+  chipPressed: { borderColor: colors.inkSoft },
+  chipSelected: { backgroundColor: colors.marigold, borderColor: colors.marigold },
+  chipSelectedPressed: { backgroundColor: colors.marigoldDeep, borderColor: colors.marigoldDeep },
+  chipText: { fontFamily: fonts.bodyBold, fontSize: size.body, color: colors.ink },
 });

@@ -1,36 +1,53 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, font, space } from '../theme';
+import { colors, fonts, radius, size, space } from '../theme';
 
 type Props = {
-  title: string;
+  title?: string;
   onBack?: () => void;
+  backLabel?: string;
 };
 
-// The colored bar at the top of each screen, with an optional Back button.
-export default function Header({ title, onBack }: Props) {
+// Top of each screen: a round Back button and the screen's title.
+export default function Header({ title, onBack, backLabel = 'Back' }: Props) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.bar, { paddingTop: insets.top + space.sm }]}>
       {onBack ? (
-        <Pressable accessibilityRole="button" onPress={onBack} hitSlop={16} style={styles.back}>
-          <Text style={styles.backText}>‹ Back</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={backLabel}
+          onPress={onBack}
+          hitSlop={8}
+          style={({ pressed }) => [styles.back, pressed && styles.backPressed]}
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.ink} />
+          <Text style={styles.backText}>{backLabel}</Text>
         </Pressable>
       ) : null}
-      <Text style={styles.title} numberOfLines={1}>
-        {title}
-      </Text>
+      {title ? (
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: space.md,
-    paddingBottom: space.md,
+  bar: { paddingHorizontal: space.md, paddingBottom: space.sm, gap: space.md, backgroundColor: colors.page },
+  back: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    minHeight: 48,
+    paddingLeft: space.sm,
+    paddingRight: space.md,
+    borderRadius: radius.round,
+    backgroundColor: colors.paper,
   },
-  back: { alignSelf: 'flex-start', paddingVertical: space.xs, marginBottom: space.xs },
-  backText: { color: colors.white, fontSize: font.body, fontWeight: '700' },
-  title: { color: colors.white, fontSize: font.title, fontWeight: '800' },
+  backPressed: { backgroundColor: colors.line },
+  backText: { fontFamily: fonts.bodyBold, fontSize: size.body, color: colors.ink, marginLeft: 2 },
+  title: { fontFamily: fonts.display, fontSize: size.title, color: colors.ink, lineHeight: 38 },
 });

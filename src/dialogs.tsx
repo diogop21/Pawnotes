@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useRef, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import BigButton from './components/BigButton';
-import { colors, font, radius, space } from './theme';
+import { colors, fonts, radius, size, space } from './theme';
 
 // Pop-up messages. On phones these use the normal system pop-ups.
 // In a web browser we draw our own, because some web previews block browser pop-ups.
@@ -109,7 +109,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(61, 44, 36, 0.45)',
+    backgroundColor: 'rgba(43, 26, 36, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: space.md,
@@ -118,15 +118,15 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     maxHeight: '90%',
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
+    backgroundColor: colors.page,
+    borderRadius: radius.md,
     padding: space.lg,
     gap: space.md,
   },
-  title: { fontSize: font.large, fontWeight: '800', color: colors.text },
-  message: { fontSize: font.body, color: colors.text, lineHeight: 26 },
-  textScroll: { backgroundColor: colors.background, borderRadius: radius.md, padding: space.md, flexGrow: 0 },
-  shareText: { fontSize: font.small, color: colors.text, lineHeight: 24 },
+  title: { fontFamily: fonts.heading, fontSize: size.heading, color: colors.ink },
+  message: { fontFamily: fonts.body, fontSize: size.body, color: colors.ink, lineHeight: 27 },
+  textScroll: { backgroundColor: colors.paper, borderRadius: radius.sm, padding: space.md, flexGrow: 0 },
+  shareText: { fontFamily: fonts.body, fontSize: size.small, color: colors.ink, lineHeight: 24 },
   row: { flexDirection: 'row', gap: space.md },
   flex: { flex: 1 },
 });

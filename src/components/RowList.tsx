@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { newId } from '../types';
-import { colors, font, radius, space } from '../theme';
+import { colors, fonts, radius, size, space } from '../theme';
 import BigButton from './BigButton';
 
 export type RowField<T> = {
@@ -11,20 +11,20 @@ export type RowField<T> = {
 
 type Props<T extends { id: string }> = {
   title: string;
+  itemName: string;
   items: T[];
   fields: RowField<T>[];
   makeEmpty: () => Omit<T, 'id'>;
-  addLabel: string;
   onChange: (items: T[]) => void;
 };
 
 // An editable list (feedings, walks, meds, quirks...) with add and remove buttons.
 export default function RowList<T extends { id: string }>({
   title,
+  itemName,
   items,
   fields,
   makeEmpty,
-  addLabel,
   onChange,
 }: Props<T>) {
   const update = (id: string, key: keyof T, value: string) =>
@@ -34,18 +34,21 @@ export default function RowList<T extends { id: string }>({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
-      {items.length === 0 && <Text style={styles.empty}>Nothing added yet.</Text>}
+      <Text style={styles.title} accessibilityRole="header">
+        {title}
+      </Text>
       {items.map((item, index) => (
         <View key={item.id} style={styles.row}>
           <View style={styles.rowHeader}>
-            <Text style={styles.rowNumber}>#{index + 1}</Text>
+            <Text style={styles.rowName}>
+              {itemName} {index + 1}
+            </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Remove item ${index + 1}`}
+              accessibilityLabel={`Remove ${itemName.toLowerCase()} ${index + 1}`}
               onPress={() => remove(item.id)}
-              hitSlop={12}
-              style={styles.removeBtn}
+              hitSlop={8}
+              style={({ pressed }) => [styles.remove, pressed && styles.removePressed]}
             >
               <Text style={styles.removeText}>Remove</Text>
             </Pressable>
@@ -53,45 +56,43 @@ export default function RowList<T extends { id: string }>({
           {fields.map((field) => (
             <TextInput
               key={field.key}
-              accessibilityLabel={field.label}
+              accessibilityLabel={`${itemName} ${index + 1} ${field.label}`}
               value={String(item[field.key] ?? '')}
               onChangeText={(text) => update(item.id, field.key, text)}
               placeholder={field.placeholder}
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.inkSoft}
               style={styles.input}
             />
           ))}
         </View>
       ))}
-      <BigButton label={`+ ${addLabel}`} variant="secondary" onPress={add} />
+      <BigButton label={`Add ${itemName.toLowerCase()}`} variant="secondary" onPress={add} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: space.lg },
-  title: { fontSize: font.large, fontWeight: '800', color: colors.text, marginBottom: space.sm },
-  empty: { fontSize: font.body, color: colors.textMuted, marginBottom: space.md },
+  wrap: { gap: space.md },
+  title: { fontFamily: fonts.heading, fontSize: size.heading, color: colors.ink },
   row: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.paper,
     borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.border,
     padding: space.md,
-    marginBottom: space.md,
+    gap: space.sm,
   },
-  rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.sm },
-  rowNumber: { fontSize: font.small, fontWeight: '700', color: colors.textMuted },
-  removeBtn: { paddingVertical: space.xs, paddingHorizontal: space.sm },
-  removeText: { fontSize: font.small, fontWeight: '700', color: colors.danger },
+  rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  rowName: { fontFamily: fonts.bodyBold, fontSize: size.small, color: colors.inkSoft },
+  remove: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.sm, borderRadius: radius.sm },
+  removePressed: { backgroundColor: colors.alertTint },
+  removeText: { fontFamily: fonts.bodyBold, fontSize: size.small, color: colors.alert },
   input: {
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
+    backgroundColor: colors.page,
+    borderRadius: radius.sm,
     paddingHorizontal: space.md,
     paddingVertical: 12,
-    fontSize: font.body,
-    color: colors.text,
-    minHeight: 52,
-    marginBottom: space.sm,
+    fontFamily: fonts.body,
+    fontSize: size.body,
+    color: colors.ink,
+    minHeight: 54,
   },
 });

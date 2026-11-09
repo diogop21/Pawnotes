@@ -1,3 +1,8 @@
+import { AtkinsonHyperlegibleNext_400Regular } from '@expo-google-fonts/atkinson-hyperlegible-next/400Regular';
+import { AtkinsonHyperlegibleNext_700Bold } from '@expo-google-fonts/atkinson-hyperlegible-next/700Bold';
+import { BricolageGrotesque_700Bold } from '@expo-google-fonts/bricolage-grotesque/700Bold';
+import { BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque/800ExtraBold';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, BackHandler, StyleSheet, Text, View } from 'react-native';
@@ -11,7 +16,7 @@ import HomeInfoScreen from './src/screens/HomeInfoScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import PetScreen from './src/screens/PetScreen';
 import { loadHome, loadPets, saveHome, savePets } from './src/storage';
-import { colors, font, space } from './src/theme';
+import { colors, fonts, size, space } from './src/theme';
 import { emptyPet, HomeInfo, Pet, SectionKey } from './src/types';
 
 // Which screen is showing. Kept as simple state (no navigation library)
@@ -24,10 +29,22 @@ type Route =
   | { name: 'new'; draft: Pet };
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
+    AtkinsonHyperlegibleNext_400Regular,
+    AtkinsonHyperlegibleNext_700Bold,
+  });
+
+  // Wait for the fonts (they load in a moment). If they fail, carry on with the phone's own font.
+  if (!fontsLoaded && !fontError) {
+    return <View style={styles.center} />;
+  }
+
   return (
     <SafeAreaProvider>
       <DialogProvider>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <PawNotes />
       </DialogProvider>
     </SafeAreaProvider>
@@ -122,7 +139,7 @@ function PawNotes() {
   if (!pets || !home) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.marigoldDeep} />
       </View>
     );
   }
@@ -238,8 +255,8 @@ function PawNotes() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.page },
   failed: { padding: space.lg, gap: space.md },
-  failedTitle: { fontSize: font.large, fontWeight: '800', color: colors.text, textAlign: 'center' },
-  failedText: { fontSize: font.body, color: colors.textMuted, textAlign: 'center', lineHeight: 26 },
+  failedTitle: { fontFamily: fonts.heading, fontSize: size.heading, color: colors.ink, textAlign: 'center' },
+  failedText: { fontFamily: fonts.body, fontSize: size.body, color: colors.inkSoft, textAlign: 'center', lineHeight: 27 },
 });

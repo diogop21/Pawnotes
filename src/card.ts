@@ -40,9 +40,11 @@ export function buildCardHtml(pets: Pet[], home: HomeInfo, photos: (string | nul
   const homeHtml = homeSections(home).map(sectionHtml).join('');
   const petsHtml = pets
     .map((pet, i) => {
+      // The pet's ID tag: the photo on a marigold disc, or the pet's initial when there's no photo.
+      const initial = escape(petName(pet).charAt(0).toUpperCase());
       const photo = photos[i]
-        ? `<img class="photo" src="${photos[i]}">`
-        : '<div class="photo none">🐾</div>';
+        ? `<div class="tag"><img src="${photos[i]}"></div>`
+        : `<div class="tag"><span>${initial}</span></div>`;
       const meta = [pet.breed, pet.age, pet.sex].map((v) => v.trim()).filter(Boolean).join(' · ');
       return `<article>
         <header>${photo}<div><h2>${escape(petName(pet))}</h2>${meta ? `<p class="meta">${escape(meta)}</p>` : ''}</div></header>
@@ -53,23 +55,26 @@ export function buildCardHtml(pets: Pet[], home: HomeInfo, photos: (string | nul
 
   return `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap">
 <style>
-  body { font-family: -apple-system, Roboto, "Segoe UI", sans-serif; color: ${colors.text}; margin: 24px; font-size: 13px; }
-  h1 { color: ${colors.primaryDark}; font-size: 22px; margin: 0 0 12px; }
+  body { font-family: "Atkinson Hyperlegible Next", -apple-system, Roboto, "Segoe UI", sans-serif; color: ${colors.ink}; background: #fff; margin: 28px; font-size: 13px; }
+  h1, h2, h3 { font-family: "Bricolage Grotesque", -apple-system, Roboto, "Segoe UI", sans-serif; }
+  h1 { font-weight: 800; font-size: 24px; margin: 0 0 14px; }
   article { page-break-before: always; }
   article:first-of-type { page-break-before: ${homeHtml ? 'always' : 'auto'}; }
-  header { display: flex; gap: 16px; align-items: center; margin-bottom: 12px; }
-  .photo { width: 140px; height: 140px; border-radius: 16px; object-fit: cover; border: 3px solid ${colors.border}; }
-  .none { display: flex; align-items: center; justify-content: center; font-size: 48px; background: ${colors.primarySoft}; }
-  h2 { font-size: 26px; margin: 0; }
-  .meta { color: ${colors.textMuted}; margin: 4px 0 0; font-size: 15px; }
-  section { border: 1px solid ${colors.border}; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; break-inside: avoid; }
-  h3 { margin: 0 0 6px; font-size: 14px; color: ${colors.primaryDark}; text-transform: uppercase; letter-spacing: .5px; }
-  h4 { margin: 6px 0 2px; font-size: 13px; }
-  p { margin: 2px 0; line-height: 1.4; }
+  header { display: flex; gap: 20px; align-items: center; margin-bottom: 16px; }
+  .tag { width: 140px; height: 140px; flex: none; border-radius: 50%; background: ${colors.marigold}; padding: 8px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+  .tag img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .tag span { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 64px; color: ${colors.ink}; }
+  h2 { font-weight: 800; font-size: 32px; margin: 0; }
+  .meta { color: ${colors.inkSoft}; margin: 4px 0 0; font-size: 15px; }
+  section { border-top: 2px solid ${colors.line}; padding: 10px 0 8px; break-inside: avoid; }
+  h3 { font-weight: 700; margin: 0 0 6px; font-size: 16px; }
+  h4 { margin: 6px 0 2px; font-size: 13px; color: ${colors.inkSoft}; }
+  p { margin: 2px 0; line-height: 1.45; }
   .gap { height: 6px; }
 </style></head><body>
-<h1>🐾 PawNotes for ${escape(pets.map(petName).join(' & ') || 'my pets')}</h1>
+<h1>PawNotes for ${escape(pets.map(petName).join(' & ') || 'my pets')}</h1>
 ${homeHtml}
 ${petsHtml}
 </body></html>`;
